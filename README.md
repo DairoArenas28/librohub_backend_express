@@ -1,0 +1,4 @@
+LibroHub nace de la necesidad para aquellos amantes de los libros que necesitan una base de datos confiable, sencilla y abierta al público. Su objetivo principal es facilitar el acceso a información detallada sobre diferentes libros, permitiendo a los usuarios consultar títulos, autores, categorías y descripciones de manera rápida y organizada.
+El sistema está diseñado para ofrecer una experiencia intuitiva, donde los lectores pueden explorar el catálogo sin complicaciones, mientras que los administradores cuentan con herramientas para gestionar, actualizar y mantener la información de los libros de forma eficiente.
+De esta manera, LibroHub se convierte en una solución práctica que promueve el acceso a la información literaria, apoyando tanto a usuarios que buscan nuevas lecturas como a quienes desean administrar contenido de manera estructurada.
+A continuación, se establece la estructura de la API Rest:
