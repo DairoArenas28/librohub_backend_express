@@ -1,4 +1,5 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, { Request, Response } from 'express';
+import cors from 'cors';
 import { globalErrorHandler } from './shared/error.handler';
 import authRouter from './modules/auth/auth.routes';
 import booksRouter from './modules/books/books.routes';
@@ -7,17 +8,12 @@ import dashboardRouter from './modules/dashboard/dashboard.routes';
 
 const app = express();
 
-// CORS middleware
-app.use((req: Request, res: Response, next: NextFunction) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-    return;
-  }
-  next();
-});
+// CORS
+app.use(cors({
+  origin: process.env.CORS_ORIGIN ?? '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
 // Body parsing
 app.use(express.json({ limit: '1mb' }));
