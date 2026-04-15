@@ -9,7 +9,9 @@ import { PasswordResetCode } from '../modules/auth/auth.entity';
 export const AppDataSource = new DataSource({
   type: 'postgres',
   url: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  ssl: process.env.DATABASE_URL?.includes('render.com') || process.env.NODE_ENV === 'production'
+    ? { rejectUnauthorized: false }
+    : false,
   synchronize: process.env.NODE_ENV !== 'production',
   logging: process.env.NODE_ENV === 'development',
   entities: [User, Book, Comment, Favorite, PasswordResetCode],
