@@ -5,6 +5,8 @@ import { hashPassword } from '../auth/auth.utils';
 import { ConflictError, NotFoundError } from '../../shared/errors';
 import { Comment } from '../books/comment.entity';
 import { Favorite } from '../books/favorite.entity';
+import path from 'path';
+import fs from 'fs';
 
 const repo = () => AppDataSource.getRepository(User);
 
@@ -18,6 +20,7 @@ function toResponse(user: User): UserResponse {
     role: user.role,
     isActive: user.isActive,
     createdAt: user.createdAt,
+    avatarPath: user.avatarPath ?? null,
   };
 }
 
@@ -72,17 +75,34 @@ export const UsersService = {
 
   async remove(id: string): Promise<void> {
     const user = await repo().findOne({ where: { id } });
-    if (!user) {
-      throw new NotFoundError('User');
-    }
+    if (!user) throw new NotFoundError('User');
 
-    // Explicitly remove related records to avoid FK constraint issues
-    // if the DB was created before CASCADE constraints were applied
     const commentRepo = AppDataSource.getRepository(Comment);
     const favoriteRepo = AppDataSource.getRepository(Favorite);
     await commentRepo.delete({ user: { id } });
     await favoriteRepo.delete({ user: { id } });
 
     await repo().remove(user);
+  },
+
+  async updateAvatar(id: string, filePath: string): Promise<UserResponse> {
+    const user = await repo().findOne({ where: { id } });
+    if (!user) throw new NotFoundError('User');
+
+    // Remove old avatar file if exists
+    if (user.avatarPath) {
+      const old = path.join(process.cwd(), user.avatarPath);
+      if (fs.existsSync(old)) fs.unlinkSync(old);
+    }
+
+    user.avatarPath = filePath;
+    const saved = await repo().save(user);
+    return toResponse(saved);
+  },
+
+  async getAvatarPath(id: string): Promise<string | null> {
+    const user = await repo().findOne({ where: { id } });
+    if (!user) throw new NotFoundError('User');
+    return user.avatarPath ?? null;
   },
 };

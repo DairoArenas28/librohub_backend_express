@@ -31,6 +31,9 @@ export class User {
   @Column({ type: 'enum', enum: ['reader', 'admin'], default: 'reader' })
   role!: 'reader' | 'admin';
 
+  @Column({ name: 'avatar_path', nullable: true, type: 'varchar' })
+  avatarPath!: string | null;
+
   @Column({ name: 'is_active', default: true })
   isActive!: boolean;
 
