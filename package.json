@@ -1,7 +1,7 @@
 {
-  "name": "deudasmart-backend-express",
+  "name": "librohub-backend-express",
   "version": "1.0.0",
-  "description": "DeudaSmart backend - authentication module",
+  "description": "LibroHub backend",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
