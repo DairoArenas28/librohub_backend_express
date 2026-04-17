@@ -5,8 +5,6 @@ import { hashPassword } from '../auth/auth.utils';
 import { ConflictError, NotFoundError } from '../../shared/errors';
 import { Comment } from '../books/comment.entity';
 import { Favorite } from '../books/favorite.entity';
-import path from 'path';
-import fs from 'fs';
 
 const repo = () => AppDataSource.getRepository(User);
 
@@ -20,7 +18,7 @@ function toResponse(user: User): UserResponse {
     role: user.role,
     isActive: user.isActive,
     createdAt: user.createdAt,
-    avatarPath: user.avatarPath ?? null,
+    hasAvatar: !!user.avatarBase64,
   };
 }
 
@@ -85,24 +83,17 @@ export const UsersService = {
     await repo().remove(user);
   },
 
-  async updateAvatar(id: string, filePath: string): Promise<UserResponse> {
+  async updateAvatar(id: string, base64: string): Promise<UserResponse> {
     const user = await repo().findOne({ where: { id } });
     if (!user) throw new NotFoundError('User');
-
-    // Remove old avatar file if exists
-    if (user.avatarPath) {
-      const old = path.join(process.cwd(), user.avatarPath);
-      if (fs.existsSync(old)) fs.unlinkSync(old);
-    }
-
-    user.avatarPath = filePath;
+    user.avatarBase64 = base64;
     const saved = await repo().save(user);
     return toResponse(saved);
   },
 
-  async getAvatarPath(id: string): Promise<string | null> {
+  async getAvatarBase64(id: string): Promise<string | null> {
     const user = await repo().findOne({ where: { id } });
     if (!user) throw new NotFoundError('User');
-    return user.avatarPath ?? null;
+    return user.avatarBase64 ?? null;
   },
 };

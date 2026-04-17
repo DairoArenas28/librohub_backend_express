@@ -1,6 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import path from 'path';
-import fs from 'fs';
 import { UsersService } from './users.service';
 
 export async function getMe(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -20,8 +18,8 @@ export async function uploadAvatar(req: Request, res: Response, next: NextFuncti
       res.status(400).json({ message: 'No se proporcionó ninguna imagen' });
       return;
     }
-    const relativePath = path.relative(process.cwd(), req.file.path).replace(/\\/g, '/');
-    const result = await UsersService.updateAvatar(userId, relativePath);
+    const base64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+    const result = await UsersService.updateAvatar(userId, base64);
     res.status(200).json(result);
   } catch (err) {
     next(err);
@@ -30,17 +28,20 @@ export async function uploadAvatar(req: Request, res: Response, next: NextFuncti
 
 export async function getAvatar(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const avatarPath = await UsersService.getAvatarPath(req.params.id);
-    if (!avatarPath) {
+    const base64 = await UsersService.getAvatarBase64(req.params.id);
+    if (!base64) {
       res.status(404).json({ message: 'Avatar not found' });
       return;
     }
-    const fullPath = path.join(process.cwd(), avatarPath);
-    if (!fs.existsSync(fullPath)) {
-      res.status(404).json({ message: 'Avatar file not found' });
+    const matches = base64.match(/^data:(.+);base64,(.+)$/);
+    if (!matches) {
+      res.status(500).json({ message: 'Invalid avatar format' });
       return;
     }
-    res.sendFile(fullPath);
+    const mimeType = matches[1];
+    const buffer = Buffer.from(matches[2], 'base64');
+    res.set('Content-Type', mimeType);
+    res.send(buffer);
   } catch (err) {
     next(err);
   }
