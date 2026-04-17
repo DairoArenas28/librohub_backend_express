@@ -110,7 +110,7 @@ export class BooksService {
       id: c.id,
       userId: c.user?.id ?? '',
       authorName: c.user?.name ?? '',
-      avatarUrl: undefined,
+      avatarUrl: c.user?.avatarBase64 ?? undefined,
       text: c.text,
       createdAt: c.createdAt.toISOString(),
     }));
@@ -189,7 +189,7 @@ export class BooksService {
       id: saved.id,
       userId,
       authorName: user?.name ?? '',
-      avatarUrl: undefined,
+      avatarUrl: user?.avatarBase64 ?? undefined,
       text: saved.text,
       createdAt: saved.createdAt.toISOString(),
     };

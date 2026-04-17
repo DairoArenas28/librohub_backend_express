@@ -19,6 +19,7 @@ function toResponse(user: User): UserResponse {
     isActive: user.isActive,
     createdAt: user.createdAt,
     hasAvatar: !!user.avatarBase64,
+    avatarBase64: user.avatarBase64 ?? null,
   };
 }
 
