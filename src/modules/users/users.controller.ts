@@ -26,6 +26,19 @@ export async function uploadAvatar(req: Request, res: Response, next: NextFuncti
   }
 }
 
+export async function getAvatarBase64Json(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const base64 = await UsersService.getAvatarBase64(req.params.id);
+    if (!base64) {
+      res.status(404).json({ message: 'Avatar not found' });
+      return;
+    }
+    res.status(200).json({ base64 });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function getAvatar(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const base64 = await UsersService.getAvatarBase64(req.params.id);
