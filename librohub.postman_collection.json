@@ -1,0 +1,994 @@
+{
+  "info": {
+    "name": "LibroHub API v1",
+    "description": "API REST de LibroHub.\n\nBase URL: {{baseUrl}}/api/v1\n\nAutenticacion: Bearer token en header Authorization.\nEl token se obtiene en Auth > Login y se guarda automaticamente en {{token}}.\n\nRoles:\n- reader: usuario estandar\n- admin: acceso completo\n\nCodigos de error:\n- 400: validacion fallida\n- 401: token ausente o invalido\n- 403: se requiere rol admin\n- 404: recurso no encontrado\n- 409: conflicto (email/documento/ISBN duplicado)\n- 413: archivo demasiado grande\n- 422: tipo de archivo no permitido\n\nVariables:\n- baseUrl: URL base (default http://localhost:3000)\n- token: JWT, se setea al hacer Login",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Endpoints de autenticacion y gestion de contrasenas. No requieren token salvo change-password.",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Registra un nuevo usuario con rol reader.\n\nBody (todos requeridos):\n- name: nombre completo\n- document: numero de documento (unico)\n- email: correo electronico (unico)\n- phone: telefono\n- password: minimo 8 caracteres\n\nRespuesta 201: {}\n\nErrores:\n- 409: email o documento ya registrado\n- 400: campos invalidos o faltantes",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Juan Perez\",\n  \"document\": \"12345678\",\n  \"email\": \"juan@example.com\",\n  \"phone\": \"3001234567\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.token) pm.collectionVariables.set('token', res.token);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Autentica con numero de documento y contrasena.\n\nBody:\n- username: numero de documento\n- password: contrasena\n\nRespuesta 200:\n{\n  \"token\": \"eyJ...\",\n  \"role\": \"reader|admin\",\n  \"userId\": \"uuid\"\n}\n\nErrores:\n- 401: credenciales invalidas\n\n> El script de test guarda el token en {{token}} automaticamente.",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"12345678\",\n  \"password\": \"password123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Solicita un codigo de recuperacion de 6 digitos enviado al email.\n\nBody:\n- email: correo registrado\n\nRespuesta 200:\n{ \"message\": \"If the email exists, a reset code has been sent\" }\n\nNota: siempre responde 200 aunque el email no exista (no revela si el usuario esta registrado).",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/forgot-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "forgot-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"juan@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Validate Code",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Verifica que el codigo de recuperacion sea valido antes de resetear la contrasena.\n\nBody:\n- email: correo del usuario\n- code: codigo de 6 digitos recibido por email\n\nRespuesta 200:\n{ \"message\": \"Code is valid\" }\n\nErrores:\n- 400: codigo invalido, expirado o ya utilizado",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/validate-code",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "validate-code"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"juan@example.com\",\n  \"code\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Restablece la contrasena usando el codigo de recuperacion. El codigo queda marcado como usado.\n\nBody:\n- email: correo del usuario\n- code: codigo de 6 digitos\n- newPassword: nueva contrasena (minimo 8 caracteres)\n\nRespuesta 200:\n{ \"message\": \"Password reset successfully\" }\n\nErrores:\n- 400: codigo invalido, expirado o ya utilizado\n- 404: usuario no encontrado",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "reset-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"juan@example.com\",\n  \"code\": \"123456\",\n  \"newPassword\": \"newpassword123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Cambia la contrasena del usuario autenticado. Requiere JWT.\n\nBody:\n- currentPassword: contrasena actual\n- newPassword: nueva contrasena (minimo 8 caracteres)\n\nRespuesta 200:\n{ \"message\": \"Password changed successfully\" }\n\nErrores:\n- 401: token invalido o contrasena actual incorrecta\n- 404: usuario no encontrado",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/auth/change-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "change-password"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"password123\",\n  \"newPassword\": \"newpassword123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Books",
+      "description": "Gestion del catalogo de libros, comentarios, favoritos, PDFs y portadas.\n\nPublico: GET /:id/cover\nRequiere auth (reader o admin): GET y POST de comentarios/favoritos\nRequiere auth + rol admin: POST, PUT, DELETE de libros y subida de archivos",
+      "item": [
+        {
+          "name": "Get Cover (publico)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "description": "Descarga la imagen de portada. NO requiere token, disenado para usarse en componentes Image.\n\nRespuesta 200: binario de imagen con Content-Type image/jpeg o image/png y Cache-Control: public, max-age=86400\n\nErrores:\n- 404: libro no encontrado o sin portada cargada",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/books/:id/cover",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "books",
+                ":id",
+                "cover"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "ID del libro (UUID)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Books by Category",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "description": "Retorna todos los libros con status active agrupados por categoria.\n\nRespuesta 200:\n[\n  {\n    \"category\": \"Ficcion\",\n    \"books\": [\n      {\n        \"id\": \"uuid\",\n        \"title\": \"string\",\n        \"author\": \"string\",\n        \"coverUrl\": \"/api/v1/books/uuid/cover\",\n        \"categories\": [\"Ficcion\"],\n        \"category\": \"Ficcion\",\n        \"year\": 1967,\n        \"status\": \"active\"\n      }\n    ]\n  }\n]\n\nNota: libros sin categoria aparecen bajo \"Sin categoria\".",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/books/by-category",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "books",
+                "by-category"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Books",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "description": "Lista todos los libros con filtros opcionales.\n\nQuery params (opcionales):\n- category: filtra por categoria (case-insensitive)\n- year: filtra por anio de publicacion (entero)\n\nRespuesta 200: array de objetos Book\n[\n  {\n    \"id\": \"uuid\",\n    \"title\": \"string\",\n    \"author\": \"string\",\n    \"isbn\": \"string\",\n    \"coverUrl\": \"string\",\n    \"categories\": [\"string\"],\n    \"year\": 2023,\n    \"pages\": 300,\n    \"language\": \"Espanol\",\n    \"publisher\": \"string\",\n    \"synopsis\": \"string\",\n    \"status\": \"active|coming_soon\"\n  }\n]\n\nErrores:\n- 400: year no es un entero valido",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/books",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "books"
+              ],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "Ficcion",
+                  "disabled": true,
+                  "description": "Filtrar por categoria"
+                },
+                {
+                  "key": "year",
+                  "value": "2023",
+                  "disabled": true,
+                  "description": "Filtrar por anio (entero)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Book by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "description": "Retorna el detalle completo de un libro incluyendo comentarios, favoritos y si tiene PDF.\n\nRespuesta 200:\n{\n  \"id\": \"uuid\",\n  \"title\": \"string\",\n  \"author\": \"string\",\n  \"coverUrl\": \"string\",\n  \"category\": \"string\",\n  \"categories\": [\"string\"],\n  \"year\": 1967,\n  \"pages\": 417,\n  \"language\": \"Espanol\",\n  \"isbn\": \"978-0-06-088328-7\",\n  \"publisher\": \"string\",\n  \"synopsis\": \"string\",\n  \"status\": \"active\",\n  \"rating\": 4.5,\n  \"isFavorite\": false,\n  \"hasPdf\": true,\n  \"comments\": [\n    {\n      \"id\": \"uuid\",\n      \"userId\": \"uuid\",\n      \"authorName\": \"string\",\n      \"avatarUrl\": \"data:image/jpeg;base64,...\",\n      \"text\": \"string\",\n      \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n    }\n  ]\n}\n\nErrores:\n- 404: libro no encontrado",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/books/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "books",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "ID del libro (UUID)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Book (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Crea un nuevo libro. Requiere rol admin.\n\nBody:\n- title (requerido): titulo del libro\n- author (requerido): autor\n- isbn (requerido): ISBN unico\n- coverUrl (opcional): URL externa de portada\n- pages (opcional): numero de paginas (entero positivo)\n- language (opcional): idioma\n- publisher (opcional): editorial\n- synopsis (opcional): sinopsis\n- year (opcional): anio de publicacion\n- status (opcional): active | coming_soon\n- categories (opcional): array de categorias\n\nRespuesta 201: objeto Book creado\n\nErrores:\n- 409: ISBN ya registrado\n- 403: usuario no es admin",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/books",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "books"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Cien anos de soledad\",\n  \"author\": \"Gabriel Garcia Marquez\",\n  \"isbn\": \"978-0-06-088328-7\",\n  \"pages\": 417,\n  \"language\": \"Espanol\",\n  \"publisher\": \"Editorial Sudamericana\",\n  \"synopsis\": \"Una saga familiar en el pueblo ficticio de Macondo.\",\n  \"year\": 1967,\n  \"status\": \"active\",\n  \"categories\": [\n    \"Ficcion\",\n    \"Literatura latinoamericana\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update Book (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Actualiza los campos de un libro. Requiere rol admin. Todos los campos son opcionales.\n\nBody (todos opcionales): title, author, isbn, coverUrl, pages, language, publisher, synopsis, year, status, categories\n\nRespuesta 200: objeto Book actualizado\n\nErrores:\n- 404: libro no encontrado\n- 403: usuario no es admin",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/books/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "books",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "ID del libro (UUID)"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Cien anos de soledad (Ed. especial)\",\n  \"pages\": 450,\n  \"status\": \"active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete Book (admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "description": "Elimina un libro permanentemente. Requiere rol admin.\n\nRespuesta 204: No Content\n\nErrores:\n- 404: libro no encontrado\n- 403: usuario no es admin",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/books/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "books",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "ID del libro (UUID)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Add Comment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Agrega un comentario al libro. El autor se toma del token JWT.\n\nBody:\n- text (requerido): texto del comentario\n\nRespuesta 201:\n{\n  \"id\": \"uuid\",\n  \"userId\": \"uuid\",\n  \"authorName\": \"Juan Perez\",\n  \"avatarUrl\": \"data:image/jpeg;base64,...\",\n  \"text\": \"Excelente libro.\",\n  \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n}\n\nErrores:\n- 404: libro no encontrado",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/books/:bookId/comments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "books",
+                ":bookId",
+                "comments"
+              ],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "1",
+                  "description": "ID del libro (UUID)"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"Excelente libro, muy recomendado.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Toggle Favorite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "description": "Agrega o quita el libro de favoritos del usuario autenticado (toggle).\n\nRespuesta 200:\n{ \"isFavorite\": true }  -- si se agrego\n{ \"isFavorite\": false } -- si se quito\n\nErrores:\n- 404: libro no encontrado",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/books/:bookId/favorite",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "books",
+                ":bookId",
+                "favorite"
+              ],
+              "variable": [
+                {
+                  "key": "bookId",
+                  "value": "1",
+                  "description": "ID del libro (UUID)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Upload PDF (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "description": "Sube el archivo PDF de un libro. Requiere rol admin.\n\nForm-data:\n- pdf: archivo PDF (campo tipo file)\n\nLimites:\n- Tamano maximo: 50 MB\n- Tipo permitido: application/pdf unicamente\n\nRespuesta 200:\n{ \"hasPdf\": true }\n\nErrores:\n- 400: no se proporciono archivo\n- 413: archivo supera 50 MB\n- 422: el archivo no es un PDF\n- 404: libro no encontrado",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/books/:id/pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "books",
+                ":id",
+                "pdf"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "ID del libro (UUID)"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "pdf",
+                  "type": "file",
+                  "src": "",
+                  "description": "Archivo PDF (max. 50 MB)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Download PDF",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "description": "Descarga el PDF del libro. Requiere token JWT.\n\nRespuesta 200: binario PDF con Content-Type: application/pdf\n\nErrores:\n- 404: libro no encontrado o sin PDF cargado",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/books/:id/pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "books",
+                ":id",
+                "pdf"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "ID del libro (UUID)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Upload Cover (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "description": "Sube la imagen de portada de un libro. Requiere rol admin.\n\nForm-data:\n- cover: imagen de portada (campo tipo file)\n\nLimites:\n- Tamano maximo: 5 MB\n- Tipos permitidos: image/png, image/jpeg\n\nRespuesta 200:\n{ \"coverUrl\": \"/api/v1/books/uuid/cover\" }\n\nEl coverUrl se actualiza automaticamente al endpoint de descarga.\n\nErrores:\n- 400: no se proporciono imagen\n- 413: imagen supera 5 MB\n- 422: el archivo no es PNG o JPG\n- 404: libro no encontrado",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/books/:id/cover",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "books",
+                ":id",
+                "cover"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "ID del libro (UUID)"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "cover",
+                  "type": "file",
+                  "src": "",
+                  "description": "Imagen PNG o JPG (max. 5 MB)"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "Gestion de usuarios.\n\nAccesible para cualquier usuario autenticado: /me, avatar\nRequiere rol admin: GET /, POST /, PUT /:id, DELETE /:id",
+      "item": [
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "description": "Retorna el perfil del usuario autenticado.\n\nRespuesta 200:\n{\n  \"id\": \"uuid\",\n  \"name\": \"Juan Perez\",\n  \"document\": \"12345678\",\n  \"email\": \"juan@example.com\",\n  \"phone\": \"3001234567\",\n  \"role\": \"reader|admin\",\n  \"isActive\": true,\n  \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n  \"hasAvatar\": true,\n  \"avatarBase64\": \"data:image/jpeg;base64,...\"\n}\n\nErrores:\n- 401: token invalido\n- 404: usuario no encontrado",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Upload Avatar",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "description": "Sube o reemplaza el avatar del usuario autenticado. La imagen se almacena como base64 en la BD.\n\nForm-data:\n- avatar: imagen (campo tipo file)\n\nRespuesta 200: objeto UserResponse actualizado con hasAvatar: true y avatarBase64 con el nuevo valor.\n\nErrores:\n- 400: no se proporciono imagen\n- 404: usuario no encontrado",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/me/avatar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                "me",
+                "avatar"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": "",
+                  "description": "Imagen de avatar"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Avatar (binario)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "description": "Retorna el avatar de un usuario como imagen binaria.\n\nRespuesta 200: binario de imagen con Content-Type correspondiente (jpeg/png)\n\nErrores:\n- 404: usuario no encontrado o sin avatar\n- 500: formato de avatar invalido en BD",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/:id/avatar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                ":id",
+                "avatar"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "ID del usuario (UUID)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Avatar Base64 (JSON)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "description": "Retorna el avatar de un usuario como string base64 en JSON. Util para apps moviles.\n\nRespuesta 200:\n{ \"base64\": \"data:image/jpeg;base64,...\" }\n\nErrores:\n- 404: usuario no encontrado o sin avatar",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/:id/avatar/base64",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                ":id",
+                "avatar",
+                "base64"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "ID del usuario (UUID)"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get All Users (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "description": "Lista todos los usuarios registrados. Requiere rol admin.\n\nRespuesta 200: array de objetos UserResponse\n[\n  {\n    \"id\": \"uuid\",\n    \"name\": \"string\",\n    \"document\": \"string\",\n    \"email\": \"string\",\n    \"phone\": \"string\",\n    \"role\": \"reader|admin\",\n    \"isActive\": true,\n    \"createdAt\": \"2024-01-01T00:00:00.000Z\",\n    \"hasAvatar\": false,\n    \"avatarBase64\": null\n  }\n]\n\nErrores:\n- 403: usuario no es admin",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create User (admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Crea un nuevo usuario. Requiere rol admin.\n\nBody:\n- name (requerido): nombre completo\n- document (requerido): numero de documento\n- email (requerido): correo electronico (unico)\n- phone (requerido): telefono\n- password (requerido): minimo 8 caracteres\n- role (opcional): reader | admin (default: reader)\n\nRespuesta 201: objeto UserResponse creado\n\nErrores:\n- 409: email ya registrado\n- 403: usuario no es admin",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Maria Lopez\",\n  \"document\": \"87654321\",\n  \"email\": \"maria@example.com\",\n  \"phone\": \"3109876543\",\n  \"password\": \"password123\",\n  \"role\": \"reader\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Update User (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "description": "Actualiza los datos de un usuario. Requiere rol admin. Todos los campos son opcionales.\n\nBody (todos opcionales):\n- name, document, email, phone: datos basicos\n- password: nueva contrasena (minimo 8 caracteres), se hashea automaticamente\n- role: reader | admin\n\nRespuesta 200: objeto UserResponse actualizado\n\nErrores:\n- 404: usuario no encontrado\n- 403: usuario no es admin",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "ID del usuario (UUID)"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Maria Lopez Actualizada\",\n  \"phone\": \"3001112233\",\n  \"role\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Delete User (admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "description": "Elimina un usuario y todos sus comentarios y favoritos asociados. Requiere rol admin.\n\nRespuesta 204: No Content\n\nErrores:\n- 404: usuario no encontrado\n- 403: usuario no es admin",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "users",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1",
+                  "description": "ID del usuario (UUID)"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "description": "Estadisticas generales del sistema. Solo accesible para administradores.",
+      "item": [
+        {
+          "name": "Get Stats (admin)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "description": "Retorna conteos de usuarios y libros activos/inactivos. Requiere rol admin.\n\nRespuesta 200:\n{\n  \"users\": {\n    \"active\": 42,\n    \"inactive\": 5\n  },\n  \"books\": {\n    \"active\": 120,\n    \"inactive\": 8\n  }\n}\n\nNota: books.inactive cuenta libros con status: coming_soon.\n\nErrores:\n- 403: usuario no es admin",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/dashboard/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "dashboard",
+                "stats"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
