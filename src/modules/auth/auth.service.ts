@@ -4,6 +4,7 @@ import { User } from '../users/user.entity';
 import { PasswordResetCode } from './auth.entity';
 import { JWT_EXPIRY, RESET_CODE_TTL_MINUTES } from './auth.constants';
 import { generateResetCode, hashPassword, comparePassword } from './auth.utils';
+import { sendPasswordResetEmail } from './email.service';
 import { RegisterData, UserRole } from './auth.types';
 import {
   UnauthorizedError,
@@ -82,6 +83,8 @@ export class AuthService {
 
     const resetCode = this.resetCodeRepo.create({ email, code, expiresAt, used: false });
     await this.resetCodeRepo.save(resetCode);
+
+    await sendPasswordResetEmail(email, code);
   }
 
   async validateCode(email: string, code: string): Promise<void> {
