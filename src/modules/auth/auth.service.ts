@@ -73,9 +73,8 @@ export class AuthService {
   async forgotPassword(email: string): Promise<void> {
     const user = await this.userRepo.findOne({ where: { email } });
 
-    // Silently succeed even if email not found — don't reveal existence
     if (!user) {
-      return;
+      throw new NotFoundError('User');
     }
 
     const code = generateResetCode();
