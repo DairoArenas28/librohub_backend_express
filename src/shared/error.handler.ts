@@ -8,7 +8,9 @@ export function globalErrorHandler(
   next: NextFunction
 ): void {
   if (err instanceof AppError) {
-    res.status(err.statusCode).json({ message: err.message });
+    const body: Record<string, unknown> = { message: err.message };
+    if (err.code) body.code = err.code;
+    res.status(err.statusCode).json(body);
     return;
   }
   // Handle payload too large (body-parser throws this when limit is exceeded)

@@ -28,8 +28,8 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
     : queryToken;
 
   if (!rawToken) {
-    const error = new UnauthorizedError('Missing or invalid authorization header');
-    res.status(error.statusCode).json({ message: error.message });
+    const error = new UnauthorizedError('Missing or invalid authorization header', 'UNAUTHORIZED');
+    res.status(error.statusCode).json({ message: error.message, code: error.code });
     return;
   }
 
@@ -39,15 +39,15 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
     req.user = payload;
     next();
   } catch {
-    const error = new UnauthorizedError('Invalid or expired token');
-    res.status(error.statusCode).json({ message: error.message });
+    const error = new UnauthorizedError('Invalid or expired token', 'UNAUTHORIZED');
+    res.status(error.statusCode).json({ message: error.message, code: error.code });
   }
 }
 
 export function adminMiddleware(req: Request, res: Response, next: NextFunction): void {
   if (!req.user || req.user.role !== 'admin') {
     const error = new ForbiddenError('Admin access required');
-    res.status(error.statusCode).json({ message: error.message });
+    res.status(error.statusCode).json({ message: error.message, code: error.code });
     return;
   }
 

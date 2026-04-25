@@ -38,7 +38,7 @@ export const UsersService = {
   async create(data: UserFormData): Promise<UserResponse> {
     const existing = await repo().findOne({ where: { email: data.email } });
     if (existing) {
-      throw new ConflictError('Email already in use');
+      throw new ConflictError('Email already in use', 'USER_DUPLICATE_EMAIL');
     }
 
     const passwordHash = await hashPassword(data.password);
