@@ -18,6 +18,8 @@ function toResponse(user: User): UserResponse {
     role: user.role,
     isActive: user.isActive,
     createdAt: user.createdAt,
+    hasAvatar: !!user.avatarBase64,
+    avatarBase64: user.avatarBase64 ?? null,
   };
 }
 
@@ -72,17 +74,27 @@ export const UsersService = {
 
   async remove(id: string): Promise<void> {
     const user = await repo().findOne({ where: { id } });
-    if (!user) {
-      throw new NotFoundError('User');
-    }
+    if (!user) throw new NotFoundError('User');
 
-    // Explicitly remove related records to avoid FK constraint issues
-    // if the DB was created before CASCADE constraints were applied
     const commentRepo = AppDataSource.getRepository(Comment);
     const favoriteRepo = AppDataSource.getRepository(Favorite);
     await commentRepo.delete({ user: { id } });
     await favoriteRepo.delete({ user: { id } });
 
     await repo().remove(user);
+  },
+
+  async updateAvatar(id: string, base64: string): Promise<UserResponse> {
+    const user = await repo().findOne({ where: { id } });
+    if (!user) throw new NotFoundError('User');
+    user.avatarBase64 = base64;
+    const saved = await repo().save(user);
+    return toResponse(saved);
+  },
+
+  async getAvatarBase64(id: string): Promise<string | null> {
+    const user = await repo().findOne({ where: { id } });
+    if (!user) throw new NotFoundError('User');
+    return user.avatarBase64 ?? null;
   },
 };

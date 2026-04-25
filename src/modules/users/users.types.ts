@@ -16,4 +16,6 @@ export interface UserResponse {
   role: 'reader' | 'admin';
   isActive: boolean;
   createdAt: Date;
+  hasAvatar: boolean;
+  avatarBase64: string | null;
 }
