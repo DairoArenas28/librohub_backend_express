@@ -28,12 +28,12 @@ export class AuthService {
     const user = await this.userRepo.findOne({ where: { document: username } });
 
     if (!user) {
-      throw new UnauthorizedError('Invalid credentials');
+      throw new UnauthorizedError('Invalid credentials', 'AUTH_INVALID_CREDENTIALS');
     }
 
     const valid = await comparePassword(password, user.passwordHash);
     if (!valid) {
-      throw new UnauthorizedError('Invalid credentials');
+      throw new UnauthorizedError('Invalid credentials', 'AUTH_INVALID_CREDENTIALS');
     }
 
     const secret = process.env.JWT_SECRET!;
@@ -47,12 +47,12 @@ export class AuthService {
   async register(data: RegisterData): Promise<void> {
     const existingEmail = await this.userRepo.findOne({ where: { email: data.email } });
     if (existingEmail) {
-      throw new ConflictError('Email already in use');
+      throw new ConflictError('Email already in use', 'USER_DUPLICATE_EMAIL');
     }
 
     const existingDocument = await this.userRepo.findOne({ where: { document: data.document } });
     if (existingDocument) {
-      throw new ConflictError('Document already in use');
+      throw new ConflictError('Document already in use', 'USER_DUPLICATE_DOCUMENT');
     }
 
     const passwordHash = await hashPassword(data.password);
@@ -91,15 +91,15 @@ export class AuthService {
     });
 
     if (!resetCode) {
-      throw new BadRequestError('Invalid or expired reset code');
+      throw new BadRequestError('Invalid or expired reset code', 'AUTH_CODE_INVALID');
     }
 
     if (resetCode.used) {
-      throw new BadRequestError('Reset code has already been used');
+      throw new BadRequestError('Reset code has already been used', 'AUTH_CODE_INVALID');
     }
 
     if (resetCode.expiresAt < new Date()) {
-      throw new BadRequestError('Reset code has expired');
+      throw new BadRequestError('Reset code has expired', 'AUTH_CODE_INVALID');
     }
   }
 
@@ -110,15 +110,15 @@ export class AuthService {
     });
 
     if (!resetCode) {
-      throw new BadRequestError('Invalid or expired reset code');
+      throw new BadRequestError('Invalid or expired reset code', 'AUTH_CODE_INVALID');
     }
 
     if (resetCode.used) {
-      throw new BadRequestError('Reset code has already been used');
+      throw new BadRequestError('Reset code has already been used', 'AUTH_CODE_INVALID');
     }
 
     if (resetCode.expiresAt < new Date()) {
-      throw new BadRequestError('Reset code has expired');
+      throw new BadRequestError('Reset code has expired', 'AUTH_CODE_INVALID');
     }
 
     const user = await this.userRepo.findOne({ where: { email } });
@@ -145,7 +145,7 @@ export class AuthService {
 
     const valid = await comparePassword(currentPassword, user.passwordHash);
     if (!valid) {
-      throw new UnauthorizedError('Current password is incorrect');
+      throw new UnauthorizedError('Current password is incorrect', 'AUTH_WRONG_PASSWORD');
     }
 
     user.passwordHash = await hashPassword(newPassword);

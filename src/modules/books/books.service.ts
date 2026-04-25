@@ -139,7 +139,7 @@ export class BooksService {
   async create(data: BookFormData): Promise<Book> {
     const existing = await this.bookRepo.findOne({ where: { isbn: data.isbn } });
     if (existing) {
-      throw new ConflictError('ISBN already in use');
+      throw new ConflictError('ISBN already in use', 'BOOK_DUPLICATE_ISBN');
     }
 
     const book = this.bookRepo.create({
