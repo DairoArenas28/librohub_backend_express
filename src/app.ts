@@ -18,6 +18,11 @@ app.use(cors({
 // Body parsing
 app.use(express.json({ limit: '1mb' }));
 
+// Health check
+app.get('/health', (_req: Request, res: Response) => {
+  res.json({ status: 'ok' });
+});
+
 // API v1 routers
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/books', booksRouter);
