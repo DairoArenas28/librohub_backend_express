@@ -251,6 +251,11 @@ describe('Property 9: isFavorite refleja el estado real en la BD', () => {
           const mockRepo = {
             findOne: jest.fn().mockResolvedValue(mockBook),
             find: jest.fn().mockResolvedValue([]),
+            createQueryBuilder: jest.fn().mockReturnValue({
+              select: jest.fn().mockReturnThis(),
+              where: jest.fn().mockReturnThis(),
+              getRawOne: jest.fn().mockResolvedValue({ hasPdf: false }),
+            }),
           };
 
           (AppDataSource.getRepository as jest.Mock).mockReturnValue(mockRepo);
