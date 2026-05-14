@@ -67,6 +67,8 @@ const sampleCategoryBooks = [
         author: 'Robert C. Martin',
         coverUrl: 'https://example.com/cover.jpg',
         categories: ['Programming'],
+        category: 'Programming',
+        year: 2008,
         status: 'active' as const,
       },
     ],

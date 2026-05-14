@@ -51,6 +51,8 @@ const sampleUser = {
   role: 'reader' as const,
   isActive: true,
   createdAt: new Date(),
+  hasAvatar: false,
+  avatarBase64: null,
 };
 
 const validCreatePayload = {
